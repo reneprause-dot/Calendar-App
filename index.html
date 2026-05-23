@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2196F3">
+    <meta name="description" content="PWA Kalenderapp mit Wunschlisten und Profilen">
+    <title>Kalender & Wunschliste</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%232196F3' width='192' height='192'/><text x='50%' y='50%' font-size='120' fill='white' text-anchor='middle' dominant-baseline='middle'>📅</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%232196F3' width='192' height='192'/><text x='50%' y='50%' font-size='120' fill='white' text-anchor='middle' dominant-baseline='middle'>📅</text></svg>">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header mit Navigation -->
+        <header class="app-header">
+            <h1>📅 Mein Kalender</h1>
+            <nav class="nav-tabs">
+                <button class="nav-btn active" data-view="calendar">Kalender</button>
+                <button class="nav-btn" data-view="wishlist">Wunschliste</button>
+                <button class="nav-btn" data-view="profiles">Profile</button>
+            </nav>
+        </header>
+
+        <!-- Kalender View -->
+        <main id="calendar-view" class="view active">
+            <div class="calendar-header">
+                <button id="prev-month" class="nav-arrow">←</button>
+                <h2 id="month-year"></h2>
+                <button id="next-month" class="nav-arrow">→</button>
+            </div>
+
+            <div class="weekdays">
+                <div>Mo</div>
+                <div>Di</div>
+                <div>Mi</div>
+                <div>Do</div>
+                <div>Fr</div>
+                <div>Sa</div>
+                <div>So</div>
+            </div>
+
+            <div id="calendar-grid" class="calendar-grid"></div>
+
+            <div id="day-modal" class="modal">
+                <div class="modal-content">
+                    <button class="modal-close">&times;</button>
+                    <h3 id="modal-day-title"></h3>
+                    <p id="modal-holiday"></p>
+                    <div class="modal-section">
+                        <h4>Wunschliste für diesen Tag</h4>
+                        <div id="modal-wishlist" class="modal-wishlist"></div>
+                        <div class="input-group">
+                            <input type="text" id="quick-wish-input" placeholder="Schnell einen Wunsch hinzufügen...">
+                            <button id="quick-wish-btn" class="btn-primary">+ Hinzufügen</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Wunschlisten View -->
+        <main id="wishlist-view" class="view">
+            <div class="wishlist-container">
+                <div class="wishlist-header">
+                    <h2>Alle Wunschlisten</h2>
+                    <select id="profile-filter" class="profile-select">
+                        <option value="">Alle Profile</option>
+                    </select>
+                </div>
+
+                <div id="wishlist-list" class="wishlist-list"></div>
+
+                <div id="empty-wishlist" class="empty-message">
+                    <p>Keine Wunschlisten vorhanden</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Profile View -->
+        <main id="profiles-view" class="view">
+            <div class="profiles-container">
+                <h2>Profile verwalten</h2>
+                <div id="profiles-list" class="profiles-list"></div>
+                <button id="add-profile-btn" class="btn-primary btn-large">+ Neues Profil</button>
+
+                <div id="profile-modal" class="modal">
+                    <div class="modal-content">
+                        <button class="modal-close">&times;</button>
+                        <h3 id="profile-modal-title">Neues Profil erstellen</h3>
+                        <div class="input-group">
+                            <label for="profile-name">Profilname:</label>
+                            <input type="text" id="profile-name" placeholder="z.B. Anna">
+                        </div>
+                        <div class="input-group">
+                            <label for="profile-color">Farbe:</label>
+                            <input type="color" id="profile-color" value="#FF6B6B">
+                        </div>
+                        <div class="modal-buttons">
+                            <button id="cancel-profile-btn" class="btn-secondary">Abbrechen</button>
+                            <button id="save-profile-btn" class="btn-primary">Speichern</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

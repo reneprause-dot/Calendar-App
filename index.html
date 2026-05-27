@@ -1,14 +1,1260 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#2f6fed" />
-    <title>NRW Kalender</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fam-Calendar</title>
+  <meta name="description" content="Fam-Calendar – gemeinsam planen, überall dabei." />
+  <meta name="theme-color" content="#1a1a2e" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Auth Screen -->
+    <div id="auth-screen" class="screen active">
+      <div class="auth-bg">
+        <div class="auth-blob blob1"></div>
+        <div class="auth-blob blob2"></div>
+        <div class="auth-blob blob3"></div>
+      </div>
+      <div class="auth-container">
+        <div class="auth-header">
+          <div class="logo-mark">✦</div>
+          <h1 class="auth-title">Fam-<br/><em>Calendar</em></h1>
+          <p class="auth-subtitle">Gemeinsam planen. Überall dabei.</p>
+        </div>
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-tab="login">Anmelden</button>
+          <button class="auth-tab" data-tab="register">Registrieren</button>
+        </div>
+        <div class="auth-form" id="login-form">
+          <div class="form-group">
+            <label>E-Mail</label>
+            <input type="email" id="login-email" placeholder="familie@beispiel.de" />
+          </div>
+          <div class="form-group">
+            <label>Passwort</label>
+            <input type="password" id="login-password" placeholder="••••••••" />
+          </div>
+          <button class="btn-primary" id="btn-login">Anmelden</button>
+          <p class="auth-hint">Noch kein Konto? Registriere dich oder nutze einen Einladungslink.</p>
+        </div>
+        <div class="auth-form hidden" id="register-form">
+          <div class="form-group">
+            <label>Name</label>
+            <input type="text" id="reg-name" placeholder="Max Mustermann" />
+          </div>
+          <div class="form-group">
+            <label>E-Mail</label>
+            <input type="email" id="reg-email" placeholder="familie@beispiel.de" />
+          </div>
+          <div class="form-group">
+            <label>Passwort</label>
+            <input type="password" id="reg-password" placeholder="••••••••" />
+          </div>
+          <div class="form-group">
+            <label>Einladungscode</label>
+            <input type="text" id="reg-invite" placeholder="z.B. FAM-XXXX-XXXX" />
+          </div>
+          <button class="btn-primary" id="btn-register">Konto erstellen</button>
+        </div>
+        <div id="auth-error" class="auth-error hidden"></div>
+      </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="main-screen" class="screen hidden">
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="logo-mark small">✦</div>
+          <span class="sidebar-title">Fam-Calendar</span>
+          <button class="sidebar-close" id="sidebar-close">✕</button>
+        </div>
+        <nav class="sidebar-nav">
+          <button class="nav-item active" data-view="calendar">
+            <span class="nav-icon">📅</span> Kalender
+          </button>
+          <button class="nav-item" data-view="events-list">
+            <span class="nav-icon">📋</span> Alle Einträge
+          </button>
+          <button class="nav-item" data-view="wishlist">
+            <span class="nav-icon">🎁</span> Wunschlisten
+          </button>
+          <button class="nav-item" data-view="profiles">
+            <span class="nav-icon">👨‍👩‍👧‍👦</span> Profile
+          </button>
+          <button class="nav-item" data-view="settings">
+            <span class="nav-icon">⚙️</span> Einstellungen
+          </button>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="user-chip" id="user-chip">
+            <div class="user-avatar" id="user-avatar-sidebar">M</div>
+            <div class="user-info">
+              <span class="user-name" id="user-name-sidebar">Lade...</span>
+              <span class="user-role" id="user-role-sidebar">Mitglied</span>
+            </div>
+          </div>
+          <button class="btn-logout" id="btn-logout">Abmelden</button>
+        </div>
+      </aside>
+      <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Top Bar -->
+        <header class="topbar">
+          <button class="menu-toggle" id="menu-toggle">☰</button>
+          <div class="topbar-center" id="topbar-title">Kalender</div>
+          <div class="topbar-actions">
+            <button class="btn-icon" id="btn-add-event" title="Neuer Eintrag">＋</button>
+          </div>
+        </header>
+
+        <!-- Calendar View -->
+        <section class="view active" id="view-calendar">
+          <div class="calendar-toolbar">
+            <div class="view-switcher">
+              <button class="view-btn active" data-cal-view="month">Monat</button>
+              <button class="view-btn" data-cal-view="week">Woche</button>
+              <button class="view-btn" data-cal-view="day">Tag</button>
+              <button class="view-btn" data-cal-view="year">Jahr</button>
+            </div>
+            <div class="nav-controls">
+              <button class="nav-arrow" id="cal-prev">‹</button>
+              <button class="today-btn" id="cal-today">Heute</button>
+              <button class="nav-arrow" id="cal-next">›</button>
+            </div>
+            <div class="cal-period" id="cal-period">Mai 2026</div>
+          </div>
+          <div id="calendar-grid"></div>
+        </section>
+
+        <!-- Events List View -->
+        <section class="view hidden" id="view-events-list">
+          <div class="list-header">
+            <h2>Alle Kalendereinträge</h2>
+            <input type="text" class="search-input" id="events-search" placeholder="Suchen…" />
+          </div>
+          <div id="events-list-container"></div>
+        </section>
+
+        <!-- Wishlist View -->
+        <section class="view hidden" id="view-wishlist">
+          <div class="list-header">
+            <h2>Alle Wunschlisten</h2>
+            <input type="text" class="search-input" id="wishlist-search" placeholder="Suchen…" />
+          </div>
+          <div id="wishlist-container"></div>
+        </section>
+
+        <!-- Profiles View -->
+        <section class="view hidden" id="view-profiles">
+          <div class="list-header">
+            <h2>Familienprofile</h2>
+            <button class="btn-primary small" id="btn-add-profile">+ Profil</button>
+          </div>
+          <div id="profiles-container"></div>
+          <div class="invite-section">
+            <h3>Familienmitglied einladen</h3>
+            <p>Teile diesen Code mit Familienmitgliedern:</p>
+            <div class="invite-code-box">
+              <span id="invite-code-display">Lade...</span>
+              <button class="btn-copy" id="btn-copy-invite">Kopieren</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Settings View -->
+        <section class="view hidden" id="view-settings">
+          <div class="settings-container">
+            <h2>Einstellungen</h2>
+            <div class="settings-group">
+              <h3>Mein Profil</h3>
+              <div class="form-group">
+                <label>Anzeigename</label>
+                <input type="text" id="settings-name" placeholder="Dein Name" />
+              </div>
+              <div class="form-group">
+                <label>Profilfarbe</label>
+                <div class="color-picker" id="settings-color">
+                  <div class="color-swatch active" style="background:#e74c3c" data-color="#e74c3c"></div>
+                  <div class="color-swatch" style="background:#3498db" data-color="#3498db"></div>
+                  <div class="color-swatch" style="background:#2ecc71" data-color="#2ecc71"></div>
+                  <div class="color-swatch" style="background:#f39c12" data-color="#f39c12"></div>
+                  <div class="color-swatch" style="background:#9b59b6" data-color="#9b59b6"></div>
+                  <div class="color-swatch" style="background:#1abc9c" data-color="#1abc9c"></div>
+                  <div class="color-swatch" style="background:#e67e22" data-color="#e67e22"></div>
+                  <div class="color-swatch" style="background:#34495e" data-color="#34495e"></div>
+                </div>
+              </div>
+              <button class="btn-primary" id="btn-save-settings">Speichern</button>
+            </div>
+            <div class="settings-group danger-zone">
+              <h3>Familie</h3>
+              <p>Familie-ID: <span id="family-id-display" class="mono">–</span></p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Event Modal -->
+    <div class="modal-overlay hidden" id="event-modal-overlay">
+      <div class="modal" id="event-modal">
+        <div class="modal-header">
+          <h3 id="modal-title">Neuer Eintrag</h3>
+          <button class="modal-close" id="modal-close">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Titel *</label>
+            <input type="text" id="event-title" placeholder="Titel des Eintrags" />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Datum *</label>
+              <input type="date" id="event-date" />
+            </div>
+            <div class="form-group">
+              <label>Uhrzeit</label>
+              <input type="time" id="event-time" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Bis</label>
+            <input type="date" id="event-end-date" />
+          </div>
+          <div class="form-group">
+            <label>Kategorie</label>
+            <select id="event-category">
+              <option value="allgemein">Allgemein</option>
+              <option value="geburtstag">🎂 Geburtstag</option>
+              <option value="arzt">🏥 Arzttermin</option>
+              <option value="schule">🎒 Schule</option>
+              <option value="sport">⚽ Sport</option>
+              <option value="urlaub">✈️ Urlaub</option>
+              <option value="feier">🎉 Feier</option>
+              <option value="sonstiges">📌 Sonstiges</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Profil zuordnen</label>
+            <select id="event-profile"></select>
+          </div>
+          <div class="form-group">
+            <label>Beschreibung</label>
+            <textarea id="event-description" rows="3" placeholder="Notizen…"></textarea>
+          </div>
+          <div class="form-group">
+            <label>🎁 Wunschliste hinzufügen</label>
+            <div class="wishlist-editor" id="wishlist-editor">
+              <div id="wishlist-items-list"></div>
+              <div class="wishlist-add-row">
+                <input type="text" id="wishlist-item-input" placeholder="Wunsch eingeben…" />
+                <input type="text" id="wishlist-item-link" placeholder="Link (optional)" />
+                <button class="btn-secondary small" id="btn-add-wish">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-danger" id="btn-delete-event" style="display:none">Löschen</button>
+          <button class="btn-secondary" id="btn-cancel-event">Abbrechen</button>
+          <button class="btn-primary" id="btn-save-event">Speichern</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div class="modal-overlay hidden" id="profile-modal-overlay">
+      <div class="modal small" id="profile-modal">
+        <div class="modal-header">
+          <h3>Profil anlegen</h3>
+          <button class="modal-close" id="profile-modal-close">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Name *</label>
+            <input type="text" id="profile-name" placeholder="z.B. Mama, Papa, Emma…" />
+          </div>
+          <div class="form-group">
+            <label>Typ</label>
+            <select id="profile-type">
+              <option value="erwachsener">👤 Erwachsener</option>
+              <option value="kind">🧒 Kind</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Farbe</label>
+            <div class="color-picker" id="profile-color-picker">
+              <div class="color-swatch active" style="background:#e74c3c" data-color="#e74c3c"></div>
+              <div class="color-swatch" style="background:#3498db" data-color="#3498db"></div>
+              <div class="color-swatch" style="background:#2ecc71" data-color="#2ecc71"></div>
+              <div class="color-swatch" style="background:#f39c12" data-color="#f39c12"></div>
+              <div class="color-swatch" style="background:#9b59b6" data-color="#9b59b6"></div>
+              <div class="color-swatch" style="background:#1abc9c" data-color="#1abc9c"></div>
+              <div class="color-swatch" style="background:#e67e22" data-color="#e67e22"></div>
+              <div class="color-swatch" style="background:#34495e" data-color="#34495e"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Geburtstag</label>
+            <input type="date" id="profile-birthday" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="btn-cancel-profile">Abbrechen</button>
+          <button class="btn-primary" id="btn-save-profile">Speichern</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, addDoc, updateDoc, deleteDoc, collection, query, where, onSnapshot, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // ═══════════════════════════════════════════════════
+    // FIREBASE CONFIG – ersetze mit deinen eigenen Werten
+    // ═══════════════════════════════════════════════════
+    const firebaseConfig = {
+      apiKey: "AIzaSyCHjruoi-I5SCSXPRAewjLl44UkQLc7msw",
+      authDomain: "fam-calendar-3073e.firebaseapp.com",
+      projectId: "fam-calendar-3073e",
+      storageBucket: "fam-calendar-3073e.firebasestorage.app",
+      messagingSenderId: "1051829386847",
+      appId: "1:1051829386847:web:7348e969426bdfb43965ea"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // ═══════════════════════════════════════════════════
+    // STATE
+    // ═══════════════════════════════════════════════════
+    let currentUser = null;
+    let familyId = null;
+    let currentView = 'month';
+    let currentDate = new Date();
+    let events = [];
+    let profiles = [];
+    let editingEventId = null;
+    let selectedProfileColor = '#e74c3c';
+    let userColor = '#e74c3c';
+    let unsubscribeEvents = null;
+    let unsubscribeProfiles = null;
+
+    // ═══════════════════════════════════════════════════
+    // FEIERTAGE NRW
+    // ═══════════════════════════════════════════════════
+    function getEasterDate(year) {
+      const a = year % 19, b = Math.floor(year/100), c = year % 100;
+      const d = Math.floor(b/4), e = b % 4, f = Math.floor((b+8)/25);
+      const g = Math.floor((b-f+1)/3), h = (19*a+b-d-g+15)%30;
+      const i = Math.floor(c/4), k = c%4, l = (32+2*e+2*i-h-k)%7;
+      const m = Math.floor((a+11*h+22*l)/451);
+      const month = Math.floor((h+l-7*m+114)/31);
+      const day = ((h+l-7*m+114)%31)+1;
+      return new Date(year, month-1, day);
+    }
+
+    function getHolidays(year) {
+      const easter = getEasterDate(year);
+      const add = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+      const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+      return {
+        [`${year}-01-01`]: 'Neujahr',
+        [fmt(add(easter,-48))]: 'Rosenmontag',
+        [fmt(add(easter,-2))]: 'Karfreitag',
+        [fmt(add(easter,0))]: 'Ostersonntag',
+        [fmt(add(easter,1))]: 'Ostermontag',
+        [`${year}-05-01`]: 'Tag der Arbeit',
+        [fmt(add(easter,39))]: 'Christi Himmelfahrt',
+        [fmt(add(easter,49))]: 'Pfingstsonntag',
+        [fmt(add(easter,50))]: 'Pfingstmontag',
+        [fmt(add(easter,60))]: 'Fronleichnam',
+        [`${year}-10-03`]: 'Tag der Deutschen Einheit',
+        [`${year}-11-01`]: 'Allerheiligen',
+        [`${year}-12-24`]: 'Heiligabend',
+        [`${year}-12-25`]: '1. Weihnachtstag',
+        [`${year}-12-26`]: '2. Weihnachtstag',
+        [`${year}-12-31`]: 'Silvester',
+      };
+    }
+
+    function getSchoolHolidays(year) {
+      // NRW Schulferien (approximiert für 2024-2027)
+      const holidays = [];
+      const ranges = {
+        2025: [
+          { name: 'Osterferien', start: '2025-04-14', end: '2025-04-26' },
+          { name: 'Pfingstferien', start: '2025-06-03', end: '2025-06-06' },
+          { name: 'Sommerferien', start: '2025-06-23', end: '2025-08-05' },
+          { name: 'Herbstferien', start: '2025-10-13', end: '2025-10-25' },
+          { name: 'Weihnachtsferien', start: '2025-12-22', end: '2026-01-06' },
+        ],
+        2026: [
+          { name: 'Osterferien', start: '2026-03-30', end: '2026-04-11' },
+          { name: 'Pfingstferien', start: '2026-05-26', end: '2026-05-29' },
+          { name: 'Sommerferien', start: '2026-06-29', end: '2026-08-11' },
+          { name: 'Herbstferien', start: '2026-10-05', end: '2026-10-17' },
+          { name: 'Weihnachtsferien', start: '2026-12-23', end: '2027-01-06' },
+        ],
+        2027: [
+          { name: 'Osterferien', start: '2027-03-22', end: '2027-04-03' },
+          { name: 'Sommerferien', start: '2027-06-28', end: '2027-08-10' },
+          { name: 'Herbstferien', start: '2027-10-04', end: '2027-10-16' },
+          { name: 'Weihnachtsferien', start: '2027-12-23', end: '2028-01-06' },
+        ],
+      };
+      return ranges[year] || [];
+    }
+
+    // ═══════════════════════════════════════════════════
+    // AUTH
+    // ═══════════════════════════════════════════════════
+    function generateInviteCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = 'FAM-';
+      for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random()*chars.length)];
+      code += '-';
+      for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random()*chars.length)];
+      return code;
+    }
+
+    document.querySelectorAll('.auth-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.auth-form').forEach(f => f.classList.add('hidden'));
+        document.getElementById(tab.dataset.tab + '-form').classList.remove('hidden');
+      });
+    });
+
+    document.getElementById('btn-login').addEventListener('click', async () => {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch(e) {
+        showAuthError(translateAuthError(e.code));
+      }
+    });
+
+    document.getElementById('btn-register').addEventListener('click', async () => {
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const invite = document.getElementById('reg-invite').value.trim().toUpperCase();
+
+      if (!name || !email || !password) return showAuthError('Bitte alle Pflichtfelder ausfüllen.');
+
+      try {
+        let targetFamilyId = null;
+
+        // Check invite code or create new family
+        if (invite) {
+          const invRef = doc(db, 'invites', invite);
+          const invSnap = await getDoc(invRef);
+          if (!invSnap.exists()) return showAuthError('Ungültiger Einladungscode.');
+          targetFamilyId = invSnap.data().familyId;
+        }
+
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(cred.user, { displayName: name });
+
+        if (!targetFamilyId) {
+          // Create new family
+          targetFamilyId = 'fam_' + cred.user.uid.slice(0,8);
+          const invCode = generateInviteCode();
+          await setDoc(doc(db, 'families', targetFamilyId), {
+            name: name + 's Familie',
+            adminUid: cred.user.uid,
+            inviteCode: invCode,
+            createdAt: new Date().toISOString()
+          });
+          await setDoc(doc(db, 'invites', invCode), { familyId: targetFamilyId });
+        }
+
+        await setDoc(doc(db, 'users', cred.user.uid), {
+          name, email,
+          familyId: targetFamilyId,
+          color: '#3498db',
+          role: invite ? 'member' : 'admin',
+          createdAt: new Date().toISOString()
+        });
+
+        // Create profile for this user
+        await addDoc(collection(db, 'families', targetFamilyId, 'profiles'), {
+          name, type: 'erwachsener', color: '#3498db',
+          userId: cred.user.uid, isUser: true
+        });
+
+      } catch(e) {
+        showAuthError(translateAuthError(e.code));
+      }
+    });
+
+    document.getElementById('btn-logout').addEventListener('click', async () => {
+      if (unsubscribeEvents) unsubscribeEvents();
+      if (unsubscribeProfiles) unsubscribeProfiles();
+      await signOut(auth);
+    });
+
+    function showAuthError(msg) {
+      const el = document.getElementById('auth-error');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      setTimeout(() => el.classList.add('hidden'), 4000);
+    }
+
+    function translateAuthError(code) {
+      const map = {
+        'auth/user-not-found': 'Kein Konto mit dieser E-Mail gefunden.',
+        'auth/wrong-password': 'Falsches Passwort.',
+        'auth/email-already-in-use': 'Diese E-Mail wird bereits verwendet.',
+        'auth/weak-password': 'Passwort muss mindestens 6 Zeichen haben.',
+        'auth/invalid-email': 'Ungültige E-Mail-Adresse.',
+        'auth/invalid-credential': 'Ungültige Anmeldedaten.',
+      };
+      return map[code] || 'Ein Fehler ist aufgetreten.';
+    }
+
+    // ═══════════════════════════════════════════════════
+    // AUTH STATE
+    // ═══════════════════════════════════════════════════
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          familyId = data.familyId;
+          userColor = data.color || '#3498db';
+          document.getElementById('user-name-sidebar').textContent = data.name;
+          document.getElementById('user-role-sidebar').textContent = data.role === 'admin' ? 'Admin' : 'Mitglied';
+          document.getElementById('user-avatar-sidebar').textContent = data.name.charAt(0).toUpperCase();
+          document.getElementById('user-avatar-sidebar').style.background = userColor;
+          document.getElementById('settings-name').value = data.name;
+
+          // Load family info
+          const famDoc = await getDoc(doc(db, 'families', familyId));
+          if (famDoc.exists()) {
+            document.getElementById('invite-code-display').textContent = famDoc.data().inviteCode;
+            document.getElementById('family-id-display').textContent = familyId;
+          }
+
+          subscribeToEvents();
+          subscribeToProfiles();
+        }
+        showScreen('main');
+      } else {
+        currentUser = null;
+        familyId = null;
+        showScreen('auth');
+      }
+    });
+
+    // ═══════════════════════════════════════════════════
+    // FIRESTORE SUBSCRIPTIONS
+    // ═══════════════════════════════════════════════════
+    function subscribeToEvents() {
+      if (!familyId) return;
+      if (unsubscribeEvents) unsubscribeEvents();
+      const q = query(collection(db, 'families', familyId, 'events'), orderBy('date'));
+      unsubscribeEvents = onSnapshot(q, snap => {
+        events = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderCurrentView();
+        renderEventsList();
+        renderWishlist();
+      });
+    }
+
+    function subscribeToProfiles() {
+      if (!familyId) return;
+      if (unsubscribeProfiles) unsubscribeProfiles();
+      unsubscribeProfiles = onSnapshot(collection(db, 'families', familyId, 'profiles'), snap => {
+        profiles = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderProfiles();
+        updateProfileSelects();
+      });
+    }
+
+    // ═══════════════════════════════════════════════════
+    // NAVIGATION
+    // ═══════════════════════════════════════════════════
+    function showScreen(name) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(name + '-screen')?.classList.remove('hidden');
+      document.getElementById(name + '-screen')?.classList.add('active');
+      if (name === 'auth') {
+        document.getElementById('main-screen').classList.add('hidden');
+        document.getElementById('auth-screen').classList.remove('hidden');
+      } else {
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('main-screen').classList.remove('hidden');
+      }
+    }
+
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const view = item.dataset.view;
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        item.classList.add('active');
+        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+        document.getElementById('view-' + view)?.classList.remove('hidden');
+        document.getElementById('topbar-title').textContent = item.querySelector('span + *')?.textContent?.trim() || item.textContent.trim().replace(/^./, '').trim();
+        closeSidebar();
+        if (view === 'calendar') renderCurrentView();
+        if (view === 'events-list') renderEventsList();
+        if (view === 'wishlist') renderWishlist();
+        if (view === 'profiles') renderProfiles();
+      });
+    });
+
+    // Sidebar
+    document.getElementById('menu-toggle').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.add('open');
+      document.getElementById('sidebar-overlay').classList.add('active');
+    });
+    document.getElementById('sidebar-close').addEventListener('click', closeSidebar);
+    document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('sidebar-overlay').classList.remove('active');
+    }
+
+    // ═══════════════════════════════════════════════════
+    // CALENDAR RENDERING
+    // ═══════════════════════════════════════════════════
+    document.querySelectorAll('.view-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentView = btn.dataset.calView;
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderCurrentView();
+      });
+    });
+    document.getElementById('cal-prev').addEventListener('click', () => { navigateCalendar(-1); });
+    document.getElementById('cal-next').addEventListener('click', () => { navigateCalendar(1); });
+    document.getElementById('cal-today').addEventListener('click', () => { currentDate = new Date(); renderCurrentView(); });
+
+    function navigateCalendar(dir) {
+      const d = new Date(currentDate);
+      if (currentView === 'year') d.setFullYear(d.getFullYear() + dir);
+      else if (currentView === 'month') d.setMonth(d.getMonth() + dir);
+      else if (currentView === 'week') d.setDate(d.getDate() + 7*dir);
+      else if (currentView === 'day') d.setDate(d.getDate() + dir);
+      currentDate = d;
+      renderCurrentView();
+    }
+
+    function renderCurrentView() {
+      if (currentView === 'month') renderMonthView();
+      else if (currentView === 'week') renderWeekView();
+      else if (currentView === 'day') renderDayView();
+      else if (currentView === 'year') renderYearView();
+    }
+
+    function fmtDate(d) {
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function getEventsForDate(dateStr) {
+      return events.filter(e => {
+        if (e.endDate) {
+          return dateStr >= e.date && dateStr <= e.endDate;
+        }
+        return e.date === dateStr;
+      });
+    }
+
+    const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+    const DAYS_SHORT = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+
+    function renderMonthView() {
+      const y = currentDate.getFullYear(), m = currentDate.getMonth();
+      document.getElementById('cal-period').textContent = `${MONTHS[m]} ${y}`;
+      const holidays = getHolidays(y);
+      const schoolHols = getSchoolHolidays(y);
+
+      const grid = document.getElementById('calendar-grid');
+      const first = new Date(y, m, 1);
+      let startDow = (first.getDay() + 6) % 7; // Mo=0
+      const daysInMonth = new Date(y, m+1, 0).getDate();
+      const today = fmtDate(new Date());
+
+      let html = '<div class="month-grid"><div class="month-header-row">';
+      DAYS_SHORT.forEach(d => html += `<div class="month-dow">${d}</div>`);
+      html += '</div><div class="month-days">';
+
+      for (let i = 0; i < startDow; i++) {
+        const prevDay = new Date(y, m, 1-startDow+i);
+        html += `<div class="month-day other-month"><span class="day-num">${prevDay.getDate()}</span></div>`;
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(y, m, d);
+        const dateStr = fmtDate(date);
+        const isToday = dateStr === today;
+        const holiday = holidays[dateStr];
+        const isSchoolHol = schoolHols.some(h => dateStr >= h.start && dateStr <= h.end);
+        const dayEvents = getEventsForDate(dateStr);
+        const dow = (date.getDay() + 6) % 7;
+        const isWeekend = dow >= 5;
+
+        html += `<div class="month-day${isToday?' today':''}${isWeekend?' weekend':''}${holiday?' holiday':''}${isSchoolHol?' school-hol':''}" data-date="${dateStr}">`;
+        html += `<span class="day-num">${d}</span>`;
+        if (holiday) html += `<span class="holiday-label">${holiday}</span>`;
+        if (isSchoolHol && !holiday) {
+          const hol = schoolHols.find(h => dateStr >= h.start && dateStr <= h.end);
+          if (hol) html += `<span class="school-hol-label">${hol.name}</span>`;
+        }
+        dayEvents.slice(0,3).forEach(ev => {
+          const profile = profiles.find(p => p.id === ev.profileId);
+          const color = profile?.color || '#3498db';
+          html += `<div class="event-chip" style="background:${color}20;border-left:3px solid ${color}" data-event-id="${ev.id}">${ev.title}</div>`;
+        });
+        if (dayEvents.length > 3) html += `<div class="event-more">+${dayEvents.length-3} mehr</div>`;
+        html += '</div>';
+      }
+
+      const remaining = (7 - ((startDow + daysInMonth) % 7)) % 7;
+      for (let i = 1; i <= remaining; i++) {
+        html += `<div class="month-day other-month"><span class="day-num">${i}</span></div>`;
+      }
+
+      html += '</div></div>';
+      grid.innerHTML = html;
+
+      grid.querySelectorAll('.month-day:not(.other-month)').forEach(cell => {
+        cell.addEventListener('click', (e) => {
+          if (!e.target.closest('.event-chip')) {
+            openEventModal(null, cell.dataset.date);
+          }
+        });
+      });
+      grid.querySelectorAll('.event-chip').forEach(chip => {
+        chip.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const ev = events.find(x => x.id === chip.dataset.eventId);
+          if (ev) openEventModal(ev);
+        });
+      });
+    }
+
+    function renderWeekView() {
+      const d = new Date(currentDate);
+      const dow = (d.getDay() + 6) % 7;
+      d.setDate(d.getDate() - dow);
+      const weekStart = new Date(d);
+      const weekEnd = new Date(d); weekEnd.setDate(weekEnd.getDate() + 6);
+      document.getElementById('cal-period').textContent =
+        `${weekStart.getDate()}. ${MONTHS[weekStart.getMonth()]} – ${weekEnd.getDate()}. ${MONTHS[weekEnd.getMonth()]} ${weekEnd.getFullYear()}`;
+
+      const holidays = getHolidays(weekStart.getFullYear());
+      const schoolHols = getSchoolHolidays(weekStart.getFullYear());
+      const today = fmtDate(new Date());
+
+      let html = '<div class="week-grid">';
+      for (let i = 0; i < 7; i++) {
+        const day = new Date(weekStart); day.setDate(weekStart.getDate() + i);
+        const dateStr = fmtDate(day);
+        const isToday = dateStr === today;
+        const holiday = holidays[dateStr];
+        const isSchoolHol = schoolHols.some(h => dateStr >= h.start && dateStr <= h.end);
+        const dayEvents = getEventsForDate(dateStr);
+        const dow2 = (day.getDay() + 6) % 7;
+        const isWeekend = dow2 >= 5;
+
+        html += `<div class="week-day${isToday?' today':''}${isWeekend?' weekend':''}" data-date="${dateStr}">`;
+        html += `<div class="week-day-header">
+          <span class="week-dow">${DAYS_SHORT[i]}</span>
+          <span class="week-date-num">${day.getDate()}</span>
+        </div>`;
+        if (holiday) html += `<div class="holiday-badge">${holiday}</div>`;
+        if (isSchoolHol) {
+          const hol = schoolHols.find(h => dateStr >= h.start && dateStr <= h.end);
+          if (hol) html += `<div class="school-badge">${hol.name}</div>`;
+        }
+        dayEvents.forEach(ev => {
+          const profile = profiles.find(p => p.id === ev.profileId);
+          const color = profile?.color || '#3498db';
+          html += `<div class="week-event" style="background:${color}20;border-left:3px solid ${color}" data-event-id="${ev.id}">
+            ${ev.time ? `<span class="ev-time">${ev.time}</span>` : ''}${ev.title}
+          </div>`;
+        });
+        html += '</div>';
+      }
+      html += '</div>';
+      document.getElementById('calendar-grid').innerHTML = html;
+
+      document.querySelectorAll('.week-day').forEach(cell => {
+        cell.addEventListener('click', e => {
+          if (!e.target.closest('.week-event')) openEventModal(null, cell.dataset.date);
+        });
+      });
+      document.querySelectorAll('.week-event').forEach(chip => {
+        chip.addEventListener('click', e => {
+          e.stopPropagation();
+          const ev = events.find(x => x.id === chip.dataset.eventId);
+          if (ev) openEventModal(ev);
+        });
+      });
+    }
+
+    function renderDayView() {
+      const dateStr = fmtDate(currentDate);
+      const holidays = getHolidays(currentDate.getFullYear());
+      const schoolHols = getSchoolHolidays(currentDate.getFullYear());
+      const holiday = holidays[dateStr];
+      const isSchoolHol = schoolHols.some(h => dateStr >= h.start && dateStr <= h.end);
+      const dayEvents = getEventsForDate(dateStr);
+      const dayName = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'][currentDate.getDay()];
+
+      document.getElementById('cal-period').textContent =
+        `${dayName}, ${currentDate.getDate()}. ${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+
+      let html = '<div class="day-view">';
+      if (holiday) html += `<div class="day-holiday-banner">🎉 ${holiday}</div>`;
+      if (isSchoolHol) {
+        const hol = schoolHols.find(h => dateStr >= h.start && dateStr <= h.end);
+        if (hol) html += `<div class="day-school-banner">🏫 ${hol.name}</div>`;
+      }
+
+      if (dayEvents.length === 0) {
+        html += '<div class="day-empty"><p>Keine Einträge</p><button class="btn-primary" data-date="' + dateStr + '" onclick="document.getElementById(\'btn-add-event\').click()">+ Eintrag hinzufügen</button></div>';
+      } else {
+        dayEvents.sort((a,b) => (a.time||'').localeCompare(b.time||'')).forEach(ev => {
+          const profile = profiles.find(p => p.id === ev.profileId);
+          const color = profile?.color || '#3498db';
+          html += `<div class="day-event" data-event-id="${ev.id}" style="border-left:4px solid ${color}">
+            <div class="day-event-time">${ev.time || 'Ganztag'}</div>
+            <div class="day-event-body">
+              <div class="day-event-title">${ev.title}</div>
+              ${ev.description ? `<div class="day-event-desc">${ev.description}</div>` : ''}
+              ${profile ? `<div class="day-event-profile" style="color:${color}">● ${profile.name}</div>` : ''}
+            </div>
+          </div>`;
+        });
+      }
+      html += '<button class="fab-day" data-date="' + dateStr + '">＋ Eintrag</button>';
+      html += '</div>';
+      document.getElementById('calendar-grid').innerHTML = html;
+
+      document.querySelectorAll('.day-event').forEach(cell => {
+        cell.addEventListener('click', () => {
+          const ev = events.find(x => x.id === cell.dataset.eventId);
+          if (ev) openEventModal(ev);
+        });
+      });
+      document.querySelector('.fab-day')?.addEventListener('click', e => {
+        openEventModal(null, e.target.dataset.date);
+      });
+    }
+
+    function renderYearView() {
+      const y = currentDate.getFullYear();
+      document.getElementById('cal-period').textContent = String(y);
+      const holidays = getHolidays(y);
+      const today = fmtDate(new Date());
+
+      let html = '<div class="year-grid">';
+      for (let m = 0; m < 12; m++) {
+        const first = new Date(y, m, 1);
+        const daysInMonth = new Date(y, m+1, 0).getDate();
+        let startDow = (first.getDay() + 6) % 7;
+
+        html += `<div class="year-month">
+          <div class="year-month-name">${MONTHS[m]}</div>
+          <div class="year-mini-grid">
+            ${DAYS_SHORT.map(d=>`<div class="ymi-dow">${d}</div>`).join('')}`;
+
+        for (let i = 0; i < startDow; i++) html += '<div class="ymi-day empty"></div>';
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+          const isToday = dateStr === today;
+          const holiday = holidays[dateStr];
+          const hasEvents = getEventsForDate(dateStr).length > 0;
+          const dow = (new Date(y,m,d).getDay()+6)%7;
+          const isWeekend = dow >= 5;
+          html += `<div class="ymi-day${isToday?' today':''}${isWeekend?' weekend':''}${holiday?' holiday':''}${hasEvents?' has-events':''}" data-date="${dateStr}" title="${holiday||''}">${d}</div>`;
+        }
+        html += '</div></div>';
+      }
+      html += '</div>';
+      document.getElementById('calendar-grid').innerHTML = html;
+
+      document.querySelectorAll('.ymi-day:not(.empty)').forEach(cell => {
+        cell.addEventListener('click', () => {
+          currentDate = new Date(cell.dataset.date);
+          currentView = 'day';
+          document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+          document.querySelector('[data-cal-view="day"]').classList.add('active');
+          renderCurrentView();
+        });
+      });
+    }
+
+    // ═══════════════════════════════════════════════════
+    // EVENT MODAL
+    // ═══════════════════════════════════════════════════
+    let wishlistItems = [];
+
+    document.getElementById('btn-add-event').addEventListener('click', () => openEventModal(null, fmtDate(currentDate)));
+    document.getElementById('modal-close').addEventListener('click', closeEventModal);
+    document.getElementById('btn-cancel-event').addEventListener('click', closeEventModal);
+    document.getElementById('event-modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeEventModal(); });
+
+    function openEventModal(event, dateStr) {
+      editingEventId = event?.id || null;
+      wishlistItems = event?.wishlist ? [...event.wishlist] : [];
+      document.getElementById('modal-title').textContent = event ? 'Eintrag bearbeiten' : 'Neuer Eintrag';
+      document.getElementById('event-title').value = event?.title || '';
+      document.getElementById('event-date').value = event?.date || dateStr || fmtDate(new Date());
+      document.getElementById('event-time').value = event?.time || '';
+      document.getElementById('event-end-date').value = event?.endDate || '';
+      document.getElementById('event-category').value = event?.category || 'allgemein';
+      document.getElementById('event-profile').value = event?.profileId || '';
+      document.getElementById('event-description').value = event?.description || '';
+      document.getElementById('btn-delete-event').style.display = event ? 'block' : 'none';
+      renderWishlistEditor();
+      document.getElementById('event-modal-overlay').classList.remove('hidden');
+    }
+
+    function closeEventModal() {
+      document.getElementById('event-modal-overlay').classList.add('hidden');
+      editingEventId = null;
+      wishlistItems = [];
+    }
+
+    document.getElementById('btn-add-wish').addEventListener('click', () => {
+      const input = document.getElementById('wishlist-item-input');
+      const link = document.getElementById('wishlist-item-link');
+      const val = input.value.trim();
+      if (!val) return;
+      wishlistItems.push({ id: Date.now().toString(), text: val, link: link.value.trim(), checked: false });
+      input.value = ''; link.value = '';
+      renderWishlistEditor();
+    });
+
+    document.getElementById('wishlist-item-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('btn-add-wish').click();
+    });
+
+    function renderWishlistEditor() {
+      const container = document.getElementById('wishlist-items-list');
+      container.innerHTML = wishlistItems.map((item, i) => `
+        <div class="wish-item">
+          <span class="wish-text">${item.text}${item.link ? ` <a href="${item.link}" target="_blank">🔗</a>` : ''}</span>
+          <button class="wish-remove" data-i="${i}">✕</button>
+        </div>
+      `).join('');
+      container.querySelectorAll('.wish-remove').forEach(btn => {
+        btn.addEventListener('click', () => {
+          wishlistItems.splice(parseInt(btn.dataset.i), 1);
+          renderWishlistEditor();
+        });
+      });
+    }
+
+    document.getElementById('btn-save-event').addEventListener('click', async () => {
+      const title = document.getElementById('event-title').value.trim();
+      const date = document.getElementById('event-date').value;
+      if (!title || !date) return showToast('Titel und Datum sind Pflichtfelder.', 'error');
+
+      const data = {
+        title, date,
+        time: document.getElementById('event-time').value || null,
+        endDate: document.getElementById('event-end-date').value || null,
+        category: document.getElementById('event-category').value,
+        profileId: document.getElementById('event-profile').value || null,
+        description: document.getElementById('event-description').value || '',
+        wishlist: wishlistItems,
+        updatedAt: new Date().toISOString()
+      };
+
+      try {
+        if (editingEventId) {
+          await updateDoc(doc(db, 'families', familyId, 'events', editingEventId), data);
+          showToast('Eintrag aktualisiert.', 'success');
+        } else {
+          data.createdAt = new Date().toISOString();
+          data.createdBy = currentUser.uid;
+          await addDoc(collection(db, 'families', familyId, 'events'), data);
+          showToast('Eintrag gespeichert.', 'success');
+        }
+        closeEventModal();
+      } catch(e) {
+        showToast('Fehler beim Speichern.', 'error');
+      }
+    });
+
+    document.getElementById('btn-delete-event').addEventListener('click', async () => {
+      if (!editingEventId || !confirm('Eintrag wirklich löschen?')) return;
+      try {
+        await deleteDoc(doc(db, 'families', familyId, 'events', editingEventId));
+        showToast('Eintrag gelöscht.', 'success');
+        closeEventModal();
+      } catch(e) {
+        showToast('Fehler beim Löschen.', 'error');
+      }
+    });
+
+    // ═══════════════════════════════════════════════════
+    // EVENTS LIST
+    // ═══════════════════════════════════════════════════
+    function renderEventsList(filter = '') {
+      const container = document.getElementById('events-list-container');
+      const holidays = {};
+      const years = [...new Set(events.map(e => new Date(e.date).getFullYear()))];
+      years.forEach(y => Object.assign(holidays, getHolidays(y)));
+
+      const today = fmtDate(new Date());
+      let filtered = [...events];
+
+      if (filter) filtered = filtered.filter(e => e.title.toLowerCase().includes(filter.toLowerCase()));
+
+      const upcoming = filtered.filter(e => e.date >= today).sort((a,b) => a.date.localeCompare(b.date));
+      const past = filtered.filter(e => e.date < today).sort((a,b) => b.date.localeCompare(a.date));
+
+      const renderGroup = (items, label) => {
+        if (!items.length) return '';
+        return `<div class="list-group">
+          <div class="list-group-label">${label}</div>
+          ${items.map(ev => {
+            const profile = profiles.find(p => p.id === ev.profileId);
+            const color = profile?.color || '#6c757d';
+            const cat = ev.category || 'allgemein';
+            return `<div class="list-event-item" data-event-id="${ev.id}">
+              <div class="list-event-color" style="background:${color}"></div>
+              <div class="list-event-body">
+                <div class="list-event-title">${ev.title}</div>
+                <div class="list-event-meta">
+                  ${formatDateDE(ev.date)}${ev.time ? ' · ' + ev.time : ''}${profile ? ' · ' + profile.name : ''}
+                  <span class="event-cat-badge cat-${cat}">${cat}</span>
+                </div>
+              </div>
+              ${ev.wishlist?.length ? `<div class="list-wish-badge">🎁 ${ev.wishlist.length}</div>` : ''}
+            </div>`;
+          }).join('')}
+        </div>`;
+      };
+
+      container.innerHTML = renderGroup(upcoming, 'Bevorstehend') + renderGroup(past, 'Vergangen');
+
+      container.querySelectorAll('.list-event-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const ev = events.find(e => e.id === item.dataset.eventId);
+          if (ev) openEventModal(ev);
+        });
+      });
+    }
+
+    document.getElementById('events-search').addEventListener('input', e => renderEventsList(e.target.value));
+
+    // ═══════════════════════════════════════════════════
+    // WISHLIST VIEW
+    // ═══════════════════════════════════════════════════
+    function renderWishlist(filter = '') {
+      const container = document.getElementById('wishlist-container');
+      const withWishlists = events.filter(e => e.wishlist?.length > 0)
+        .filter(e => !filter || e.title.toLowerCase().includes(filter.toLowerCase()) ||
+          e.wishlist.some(w => w.text.toLowerCase().includes(filter.toLowerCase())))
+        .sort((a,b) => a.date.localeCompare(b.date));
+
+      if (!withWishlists.length) {
+        container.innerHTML = '<div class="empty-state"><p>Noch keine Wunschlisten vorhanden.</p><p>Füge einem Kalendereintrag eine Wunschliste hinzu.</p></div>';
+        return;
+      }
+
+      container.innerHTML = withWishlists.map(ev => {
+        const profile = profiles.find(p => p.id === ev.profileId);
+        const color = profile?.color || '#3498db';
+        return `<div class="wishlist-card">
+          <div class="wishlist-card-header" style="border-left:4px solid ${color}">
+            <div>
+              <div class="wishlist-card-title">${ev.title}</div>
+              <div class="wishlist-card-date">${formatDateDE(ev.date)}${profile ? ' · ' + profile.name : ''}</div>
+            </div>
+            <button class="btn-edit-event" data-event-id="${ev.id}">✎</button>
+          </div>
+          <div class="wishlist-items">
+            ${ev.wishlist.map((item, i) => `
+              <div class="wishlist-check-item${item.checked ? ' checked' : ''}" data-event-id="${ev.id}" data-item-i="${i}">
+                <div class="check-box">${item.checked ? '✓' : ''}</div>
+                <span>${item.text}${item.link ? ` <a href="${item.link}" target="_blank" class="wish-link">🔗</a>` : ''}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>`;
+      }).join('');
+
+      container.querySelectorAll('.wishlist-check-item').forEach(item => {
+        item.addEventListener('click', async () => {
+          const ev = events.find(e => e.id === item.dataset.eventId);
+          if (!ev) return;
+          const i = parseInt(item.dataset.itemI);
+          const updatedWishlist = [...ev.wishlist];
+          updatedWishlist[i] = { ...updatedWishlist[i], checked: !updatedWishlist[i].checked };
+          await updateDoc(doc(db, 'families', familyId, 'events', ev.id), { wishlist: updatedWishlist });
+        });
+      });
+
+      container.querySelectorAll('.btn-edit-event').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const ev = events.find(x => x.id === btn.dataset.eventId);
+          if (ev) openEventModal(ev);
+        });
+      });
+    }
+
+    document.getElementById('wishlist-search').addEventListener('input', e => renderWishlist(e.target.value));
+
+    // ═══════════════════════════════════════════════════
+    // PROFILES
+    // ═══════════════════════════════════════════════════
+    function renderProfiles() {
+      const container = document.getElementById('profiles-container');
+      container.innerHTML = profiles.map(p => `
+        <div class="profile-card">
+          <div class="profile-avatar" style="background:${p.color}">${p.name.charAt(0).toUpperCase()}</div>
+          <div class="profile-info">
+            <div class="profile-name">${p.name}</div>
+            <div class="profile-type">${p.type === 'kind' ? '🧒 Kind' : '👤 Erwachsener'}${p.birthday ? ' · 🎂 ' + formatDateDE(p.birthday) : ''}</div>
+          </div>
+          <button class="btn-icon-sm" data-profile-id="${p.id}">✎</button>
+        </div>
+      `).join('') || '<div class="empty-state">Noch keine Profile angelegt.</div>';
+
+      updateProfileSelects();
+    }
+
+    function updateProfileSelects() {
+      const sel = document.getElementById('event-profile');
+      const currentVal = sel.value;
+      sel.innerHTML = '<option value="">– Kein Profil –</option>' +
+        profiles.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+      if (currentVal) sel.value = currentVal;
+    }
+
+    document.getElementById('btn-add-profile').addEventListener('click', () => {
+      document.getElementById('profile-name').value = '';
+      document.getElementById('profile-birthday').value = '';
+      selectedProfileColor = '#3498db';
+      document.querySelectorAll('#profile-color-picker .color-swatch').forEach(s => s.classList.remove('active'));
+      document.querySelector('#profile-color-picker [data-color="#3498db"]')?.classList.add('active');
+      document.getElementById('profile-modal-overlay').classList.remove('hidden');
+    });
+
+    document.getElementById('profile-modal-close').addEventListener('click', () =>
+      document.getElementById('profile-modal-overlay').classList.add('hidden'));
+    document.getElementById('btn-cancel-profile').addEventListener('click', () =>
+      document.getElementById('profile-modal-overlay').classList.add('hidden'));
+
+    document.querySelectorAll('#profile-color-picker .color-swatch').forEach(swatch => {
+      swatch.addEventListener('click', () => {
+        document.querySelectorAll('#profile-color-picker .color-swatch').forEach(s => s.classList.remove('active'));
+        swatch.classList.add('active');
+        selectedProfileColor = swatch.dataset.color;
+      });
+    });
+
+    document.getElementById('btn-save-profile').addEventListener('click', async () => {
+      const name = document.getElementById('profile-name').value.trim();
+      if (!name) return showToast('Name ist ein Pflichtfeld.', 'error');
+      try {
+        await addDoc(collection(db, 'families', familyId, 'profiles'), {
+          name,
+          type: document.getElementById('profile-type').value,
+          color: selectedProfileColor,
+          birthday: document.getElementById('profile-birthday').value || null,
+          isUser: false
+        });
+        document.getElementById('profile-modal-overlay').classList.add('hidden');
+        showToast('Profil gespeichert.', 'success');
+      } catch(e) {
+        showToast('Fehler beim Speichern.', 'error');
+      }
+    });
+
+    // ═══════════════════════════════════════════════════
+    // SETTINGS
+    // ═══════════════════════════════════════════════════
+    document.querySelectorAll('#settings-color .color-swatch').forEach(swatch => {
+      swatch.addEventListener('click', () => {
+        document.querySelectorAll('#settings-color .color-swatch').forEach(s => s.classList.remove('active'));
+        swatch.classList.add('active');
+        userColor = swatch.dataset.color;
+      });
+    });
+
+    document.getElementById('btn-save-settings').addEventListener('click', async () => {
+      const name = document.getElementById('settings-name').value.trim();
+      if (!name) return;
+      try {
+        await updateDoc(doc(db, 'users', currentUser.uid), { name, color: userColor });
+        await updateProfile(currentUser, { displayName: name });
+        document.getElementById('user-name-sidebar').textContent = name;
+        document.getElementById('user-avatar-sidebar').textContent = name.charAt(0).toUpperCase();
+        document.getElementById('user-avatar-sidebar').style.background = userColor;
+        showToast('Einstellungen gespeichert.', 'success');
+      } catch(e) {
+        showToast('Fehler beim Speichern.', 'error');
+      }
+    });
+
+    // ═══════════════════════════════════════════════════
+    // INVITE
+    // ═══════════════════════════════════════════════════
+    document.getElementById('btn-copy-invite').addEventListener('click', () => {
+      const code = document.getElementById('invite-code-display').textContent;
+      navigator.clipboard.writeText(code).then(() => showToast('Einladungscode kopiert!', 'success'));
+    });
+
+    // ═══════════════════════════════════════════════════
+    // HELPERS
+    // ═══════════════════════════════════════════════════
+    function formatDateDE(str) {
+      if (!str) return '';
+      const [y,m,d] = str.split('-');
+      return `${d}.${m}.${y}`;
+    }
+
+    function showToast(msg, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.className = `toast toast-${type}`;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    // ═══════════════════════════════════════════════════
+    // INITIAL RENDER
+    // ═══════════════════════════════════════════════════
+    renderMonthView();
+
+  </script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+      });
+    }
+  </script>
+</body>
 </html>
